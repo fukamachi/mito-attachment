@@ -8,7 +8,7 @@ Besides, the backend storage can be replaced easily. This makes it easy that usi
 
 ## Usage
 
-### Setup storage
+### Setting up the storage
 
 ```common-lisp
 (defvar *appenv* (uiop:getenv "APP_ENV"))
@@ -29,7 +29,7 @@ Besides, the backend storage can be replaced easily. This makes it easy that usi
 
 ```
 
-### Attachment Mito class
+### Defining an attachment Mito class
 
 ```common-lisp
 ;; Attachment class for saving metadata into RDBMS
@@ -37,16 +37,29 @@ Besides, the backend storage can be replaced easily. This makes it easy that usi
   (:metaclass mito:dao-table-class))
 ```
 
-### Save
+### Saving
 
 ```common-lisp
-(mito:create-dao 'image
-                 :file-key "file.png"
-                 :content #P"uploaded-file.png"
-                 :content-type "image/png")
+;; :content can be specified as a pathname or a stream.
+(mito:create-dao 'image :content #P"uploaded-file.png")
+
+;; Override the file content-type
+(mito:create-dao 'image :content #P"uploaded-file.png" :content-type "image/png")
+
+;; Use an original file-key
+(mito:create-dao 'image :content #P"uploaded-file.png" :file-key "image.png")
 ```
 
-See [example.lisp](example.lisp) to see the full example. It's a Lack web application which allows users to upload image files.
+### Getting the URL
+
+```common-lisp
+(let ((file (mito:find-dao 'image :id 1)))
+  (attachment-file-url file))
+;-> ;; SELECT * FROM "image" WHERE ("id" = ?) LIMIT 1 (1) [1 row] | MITO.DB:RETRIEVE-BY-SQL
+;=> "/mito-attachment-example/3616D80112884799B272DC962F4BBF97.jpg"
+```
+
+See [example.lisp](example.lisp) for getting the full example. It's a Lack web application which allows users to upload image files.
 
 ## Installation
 

@@ -5,7 +5,7 @@
 ;; 'clackup' command is a Roswell script provided by Clack (http://clacklisp.org).
 ;; You can install it by 'ros install clack'.
 
-(ql:quickload '(:mito-attachment :lack-request :uuid) :silent t)
+(ql:quickload '(:mito-attachment :lack :lack-request :uuid) :silent t)
 
 (in-package :cl-user)
 (defpackage mito.attachment.example
