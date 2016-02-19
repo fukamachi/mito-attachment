@@ -54,7 +54,7 @@ Besides, the backend storage can be replaced easily. This makes it easy that usi
 
 ```common-lisp
 (let ((file (mito:find-dao 'image :id 1)))
-  (attachment-file-url file))
+  (file-url file))
 ;-> ;; SELECT * FROM "image" WHERE ("id" = ?) LIMIT 1 (1) [1 row] | MITO.DB:RETRIEVE-BY-SQL
 ;=> "/mito-attachment-example/3616D80112884799B272DC962F4BBF97.jpg"
 ```

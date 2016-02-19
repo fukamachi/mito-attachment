@@ -69,7 +69,7 @@ img {
   <input type=\"submit\">
 </form>
 </body>
-</html>" (mapcar #'attachment-file-url (mito:retrieve-dao 'image))))))))
+</html>" (mapcar #'file-url (mito:retrieve-dao 'image))))))))
 
 (lack:builder
   :accesslog
