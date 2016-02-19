@@ -8,7 +8,8 @@
                 #:store-object-in-storage
                 #:delete-object-from-storage)
   (:import-from #:trivial-mimes
-                #:mime-lookup)
+                #:mime-lookup
+                #:mime-file-type)
   (:import-from #:mito
                 #:dao-table-mixin
                 #:save-dao
@@ -46,7 +47,30 @@
              (or (mime-lookup content) "binary/octet-stream")))
       (file-stream
        (setf (attachment-content-type attachment)
-             (mime-lookup (pathname content))))))
+             (mime-lookup (pathname content))))
+      (stream
+       (setf (attachment-content-type attachment)
+             "binary/octet-stream"))))
+
+  (unless (and (slot-boundp attachment 'file-key)
+               (slot-value attachment 'file-key))
+    (etypecase content
+      (pathname
+       (setf (attachment-file-key attachment)
+             (file-namestring content)))
+      (file-stream
+       (let ((file (pathname content)))
+         (setf (attachment-file-key attachment)
+               (format nil "~A~:[~;~:*.~A~]"
+                       (pathname-name file)
+                       (or (pathname-type file)
+                           (mime-file-type (attachment-content-type attachment)))))))
+      (stream
+       (setf (attachment-file-key attachment)
+             (format nil "~A~:[~;~:*.~A~]"
+                     (uuid:print-bytes nil (uuid:make-v4-uuid))
+                     (mime-file-type
+                      (attachment-content-type attachment)))))))
 
   (unless (and (slot-boundp attachment 'file-size)
                (slot-value attachment 'file-size))

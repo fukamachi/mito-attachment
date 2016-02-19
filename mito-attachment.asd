@@ -20,6 +20,7 @@
                :zs3
                :lack-component
                :trivial-mimes
+               :uuid
                :cl-reexport
                :uiop
                :alexandria)
