@@ -45,6 +45,13 @@
   (with-s3-storage storage
     (zs3:put-stream object (storage-bucket storage) file-key)))
 
+(defmethod store-object-in-storage ((storage s3-storage) (object sequence) file-key)
+  (with-s3-storage storage
+    (uiop:with-temporary-file (:stream stream :pathname pathname)
+      (write-sequence object stream)
+      :close-stream
+      (zs3:put-stream pathname (storage-bucket storage) file-key))))
+
 (defmethod delete-object-from-storage ((storage s3-storage) file-key)
   (with-s3-storage storage
     (zs3:delete-object (storage-bucket storage) file-key)))

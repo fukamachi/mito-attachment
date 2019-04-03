@@ -62,6 +62,16 @@
                          :element-type (stream-element-type object))
       (copy-stream object out))))
 
+(defmethod store-object-in-storage ((storage disk-storage) (object sequence) file-key)
+  (let ((file (disk-storage-file storage file-key)))
+    (ensure-directories-exist file)
+    (with-open-file (out file
+                         :direction :output
+                         :if-exists :supersede
+                         :if-does-not-exist :create
+                         :element-type '(unsigned-byte 8))
+      (write-sequence object out))))
+
 (defmethod delete-object-from-storage ((storage disk-storage) file-key)
   (let ((file (disk-storage-file storage file-key)))
     (when (probe-file file)
