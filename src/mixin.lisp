@@ -83,8 +83,9 @@
        (setf (file-size attachment)
              (- (file-length content) (file-position content))))
       (stream
-       (setf (content attachment) (slurp-stream content))
-       (setf (file-size attachment) (length content))))))
+       (let ((content (slurp-stream content)))
+         (setf (slot-value attachment 'content) content)
+         (setf (file-size attachment) (length content)))))))
 
 (defmethod initialize-instance :after ((attachment attachment) &rest initargs
                                        &key content &allow-other-keys)
