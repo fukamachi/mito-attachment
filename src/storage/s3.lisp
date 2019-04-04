@@ -45,6 +45,11 @@
   (with-s3-storage storage
     (zs3:put-stream object (storage-bucket storage) file-key)))
 
+(defmethod store-object-in-storage ((storage s3-storage) (object sequence) file-key)
+  (check-type object (array (unsigned-byte 8)))
+  (with-s3-storage storage
+    (zs3:put-vector object (storage-bucket storage) file-key)))
+
 (defmethod delete-object-from-storage ((storage s3-storage) file-key)
   (with-s3-storage storage
     (zs3:delete-object (storage-bucket storage) file-key)))
