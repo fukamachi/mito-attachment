@@ -63,6 +63,7 @@
       (copy-stream object out))))
 
 (defmethod store-object-in-storage ((storage disk-storage) (object sequence) file-key)
+  (check-type object (array (unsigned-byte 8)))
   (let ((file (disk-storage-file storage file-key)))
     (ensure-directories-exist file)
     (with-open-file (out file
