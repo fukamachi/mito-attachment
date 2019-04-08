@@ -11,8 +11,7 @@
   (:import-from #:alexandria
                 #:once-only)
   (:export #:s3-storage
-           #:s3-storage-access-key
-           #:s3-storage-secret-key))
+           #:s3-storage-credentials))
 (in-package :mito.attachment.storage.s3)
 
 (defclass s3-storage (storage)
@@ -22,6 +21,11 @@
                :accessor s3-storage-secret-key))
   (:default-initargs
    :endpoint zs3::*s3-endpoint*))
+
+(defgeneric s3-storage-credentials (storage)
+  (:method ((storage s3-storage))
+    (values (s3-storage-access-key storage)
+            (s3-storage-secret-key storage))))
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
@@ -33,8 +37,8 @@
 (defmacro with-s3-storage (storage &body body)
   (once-only (storage)
     `(let ((zs3::*s3-endpoint* (storage-endpoint ,storage))
-           (zs3:*credentials* (list (s3-storage-access-key ,storage)
-                                    (s3-storage-secret-key ,storage))))
+           (zs3:*credentials* (multiple-value-list
+                               (s3-storage-credentials ,storage))))
        ,@body)))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
