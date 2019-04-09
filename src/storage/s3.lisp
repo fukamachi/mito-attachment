@@ -18,14 +18,19 @@
   ((access-key :initarg :access-key
                :accessor s3-storage-access-key)
    (secret-key :initarg :secret-key
-               :accessor s3-storage-secret-key))
+               :accessor s3-storage-secret-key)
+   (session-token :initarg :session-token
+                  :initform nil
+                  :accessor s3-storage-session-token))
   (:default-initargs
    :endpoint zs3::*s3-endpoint*))
 
 (defgeneric s3-storage-credentials (storage)
   (:method ((storage s3-storage))
-    (values (s3-storage-access-key storage)
-            (s3-storage-secret-key storage))))
+    (values
+     (s3-storage-access-key storage)
+     (s3-storage-secret-key storage)
+     (s3-storage-session-token storage))))
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
