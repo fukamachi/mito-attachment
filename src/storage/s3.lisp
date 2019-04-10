@@ -37,9 +37,15 @@
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
-          "https://~A.~A/~A"
+          "https://~A.~A/~@[~A/~]~A"
           (storage-bucket storage)
           (storage-endpoint storage)
+          (storage-prefix storage)
+          file-key))
+
+(defun s3-file-key (storage file-key)
+  (format nil "~@[~A/~]~A"
+          (storage-prefix storage)
           file-key))
 
 (defmacro with-s3-storage (storage &body body)
@@ -51,17 +57,17 @@
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
   (with-s3-storage storage
-    (zs3:put-file object (storage-bucket storage) file-key)))
+    (zs3:put-file object (storage-bucket storage) (s3-file-key storage file-key))))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object stream) file-key)
   (with-s3-storage storage
-    (zs3:put-stream object (storage-bucket storage) file-key)))
+    (zs3:put-stream object (storage-bucket storage) (s3-file-key storage file-key))))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object sequence) file-key)
   (check-type object (array (unsigned-byte 8)))
   (with-s3-storage storage
-    (zs3:put-vector object (storage-bucket storage) file-key)))
+    (zs3:put-vector object (storage-bucket storage) (s3-file-key storage file-key))))
 
 (defmethod delete-object-from-storage ((storage s3-storage) file-key)
   (with-s3-storage storage
-    (zs3:delete-object (storage-bucket storage) file-key)))
+    (zs3:delete-object (storage-bucket storage) (s3-file-key storage file-key))))

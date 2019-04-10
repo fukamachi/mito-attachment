@@ -4,6 +4,7 @@
   (:export #:*storage*
            #:storage
            #:storage-bucket
+           #:storage-prefix
            #:storage-endpoint
            #:storage-file-url
            #:store-object-in-storage
@@ -15,6 +16,9 @@
 (defclass storage ()
   ((bucket :initarg :bucket
            :accessor storage-bucket)
+   (prefix :initarg :prefix
+           :initform nil
+           :accessor storage-prefix)
    (endpoint :initarg :endpoint
              :initform nil
              :accessor storage-endpoint)))

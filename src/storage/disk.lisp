@@ -30,12 +30,12 @@
 (defgeneric disk-storage-file (storage file-key)
   (:method ((storage disk-storage) file-key)
     (merge-pathnames
-     file-key
+     (format nil "~@[~A/~]~A" (storage-prefix storage) file-key)
      (disk-storage-bucket-directory storage))))
 
 (defgeneric disk-storage-mount-path (storage)
   (:method ((storage disk-storage))
-    (format nil "~:[~;~:*~A~]/~A"
+    (format nil "~@[~A~]/~A"
             (disk-storage-mount-path-prefix storage)
             (storage-bucket storage))))
 
