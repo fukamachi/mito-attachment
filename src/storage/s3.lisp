@@ -21,9 +21,12 @@
                :accessor s3-storage-secret-key)
    (session-token :initarg :session-token
                   :initform nil
-                  :accessor s3-storage-session-token))
+                  :accessor s3-storage-session-token)
+   (region :initarg :region
+           :initform zs3:*s3-region*
+           :accessor s3-storage-region))
   (:default-initargs
-   :endpoint zs3::*s3-endpoint*))
+   :endpoint zs3:*s3-endpoint*))
 
 (defgeneric s3-storage-credentials (storage)
   (:method ((storage s3-storage))
@@ -34,14 +37,14 @@
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
-          "https://~A/~A/~A"
-          (storage-endpoint storage)
+          "https://~A.~A/~A"
           (storage-bucket storage)
+          (storage-endpoint storage)
           file-key))
 
 (defmacro with-s3-storage (storage &body body)
   (once-only (storage)
-    `(let ((zs3::*s3-endpoint* (storage-endpoint ,storage))
+    `(let ((zs3:*s3-region* (s3-storage-region ,storage))
            (zs3:*credentials* (multiple-value-list
                                (s3-storage-credentials ,storage))))
        ,@body)))
