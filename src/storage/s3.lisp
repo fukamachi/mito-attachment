@@ -37,14 +37,14 @@
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
-          "https://~A.~A/~@[~A/~]~A"
+          "https://~A.~A/~@[~A~]~A"
           (storage-bucket storage)
           (storage-endpoint storage)
           (storage-prefix storage)
           file-key))
 
 (defun s3-file-key (storage file-key)
-  (format nil "~@[~A/~]~A"
+  (format nil "~@[~A~]~A"
           (storage-prefix storage)
           file-key))
 
