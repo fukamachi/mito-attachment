@@ -3,8 +3,10 @@
   (:use #:cl
         #:mito.attachment.storage)
   (:import-from #:zs3
+                #:*s3-region*
                 #:*s3-endpoint*
                 #:*credentials*
+                #:region-endpoint
                 #:put-file
                 #:put-stream
                 #:delete-object)
@@ -51,8 +53,11 @@
 (defmacro with-s3-storage (storage &body body)
   (once-only (storage)
     `(let ((zs3:*s3-region* (s3-storage-region ,storage))
+           ;; XXX: ZS3 ignores the bucket name if zs3:*s3-endpoint* is different
+           ;;   from the returned value of zs3::region-endpoint.
+           (zs3:*s3-endpoint* (zs3::region-endpoint (s3-storage-region ,storage)))
            (zs3:*credentials* (multiple-value-list
-                               (s3-storage-credentials ,storage))))
+                                (s3-storage-credentials ,storage))))
        ,@body)))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
