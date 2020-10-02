@@ -5,6 +5,7 @@
                 #:storage
                 #:*storage*
                 #:storage-file-url
+                #:get-object-in-storage
                 #:store-object-in-storage
                 #:delete-object-from-storage)
   (:import-from #:trivial-mimes
@@ -19,6 +20,7 @@
            #:content-type
            #:file-size
            #:file-url
+           #:get-object
            #:content))
 (in-package :mito.attachment.mixin)
 
@@ -100,6 +102,11 @@
   (:method ((attachment attachment))
     (storage-file-url *storage*
                       (file-key attachment))))
+
+(defgeneric get-object (attachment)
+  (:method ((attachment attachment))
+    (get-object-in-storage *storage*
+                           (file-key attachment))))
 
 (defun slurp-stream (stream &optional size)
   (if size

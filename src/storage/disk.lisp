@@ -45,6 +45,10 @@
           (disk-storage-mount-path storage)
           file-key))
 
+(defmethod get-object-in-storage ((storage disk-storage) file-key)
+  (open (disk-storage-file storage file-key)
+        :element-type '(unsigned-byte 8)))
+
 (defmethod store-object-in-storage ((storage disk-storage) (object pathname) file-key)
   (let ((file (disk-storage-file storage file-key)))
     (ensure-directories-exist file)

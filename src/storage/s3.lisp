@@ -60,6 +60,11 @@
                                 (s3-storage-credentials ,storage))))
        ,@body)))
 
+(defmethod get-object-in-storage ((storage s3-storage) file-key)
+  (with-s3-storage storage
+    (zs3:get-object (storage-bucket storage) (s3-file-key storage file-key)
+                    :output :stream)))
+
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
   (with-s3-storage storage
     (zs3:put-file object (storage-bucket storage) (s3-file-key storage file-key))))

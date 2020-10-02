@@ -7,6 +7,7 @@
            #:storage-prefix
            #:storage-endpoint
            #:storage-file-url
+           #:get-object-in-storage
            #:store-object-in-storage
            #:delete-object-from-storage))
 (in-package :mito.attachment.storage)
@@ -24,6 +25,8 @@
              :accessor storage-endpoint)))
 
 (defgeneric storage-file-url (storage file-key))
+
+(defgeneric get-object-in-storage (storage file-key))
 
 (defgeneric store-object-in-storage (storage object file-key))
 
