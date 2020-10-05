@@ -27,14 +27,15 @@
   :components ((:module "src"
                 :components
                 ((:file "mito-attachment" :depends-on ("mixin" "storage" "storage-components"))
-                 (:file "mixin" :depends-on ("storage"))
+                 (:file "mixin" :depends-on ("storage" "util"))
                  (:file "storage")
                  (:module "storage-components"
                   :pathname "storage"
-                  :depends-on ("storage")
+                  :depends-on ("storage" "util")
                   :components
                   ((:file "disk")
-                   (:file "s3"))))))
+                   (:file "s3")))
+                 (:file "util"))))
   :description "Mito mixin class for file management"
   :long-description
   #.(with-open-file (stream (merge-pathnames

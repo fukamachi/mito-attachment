@@ -2,9 +2,14 @@
 (defpackage mito.attachment.storage.disk
   (:use #:cl
         #:mito.attachment.storage)
+  (:import-from #:mito-attachment.util
+                #:slurp-stream)
   (:import-from #:lack.component
                 #:lack-component
                 #:call)
+  (:import-from #:flexi-streams
+                #:make-in-memory-input-stream
+                #:make-flexi-stream)
   (:import-from #:alexandria
                 #:copy-stream)
   (:export #:disk-storage
@@ -46,8 +51,10 @@
           file-key))
 
 (defmethod get-object-in-storage ((storage disk-storage) file-key)
-  (open (disk-storage-file storage file-key)
-        :element-type '(unsigned-byte 8)))
+  (with-open-file (in (disk-storage-file storage file-key) :element-type '(unsigned-byte 8))
+    (flex:make-flexi-stream
+      (flex:make-in-memory-input-stream
+        (slurp-stream in)))))
 
 (defmethod store-object-in-storage ((storage disk-storage) (object pathname) file-key)
   (let ((file (disk-storage-file storage file-key)))
