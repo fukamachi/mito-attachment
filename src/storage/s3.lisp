@@ -10,10 +10,15 @@
                 #:put-file
                 #:put-stream
                 #:delete-object)
+  (:import-from #:aws-sign4
+                #:*aws-credentials*
+                #:aws-sign4)
   (:import-from #:alexandria
-                #:once-only)
+                #:once-only
+                #:when-let)
   (:export #:s3-storage
-           #:s3-storage-credentials))
+           #:s3-storage-credentials
+           #:s3-storage-file-presigned-url))
 (in-package :mito.attachment.storage.s3)
 
 (defclass s3-storage (storage)
@@ -44,6 +49,26 @@
           (storage-endpoint storage)
           (storage-prefix storage)
           file-key))
+
+(defun s3-storage-file-presigned-url (storage file-key &key (expires-in 900))
+  (let ((host (format nil "~A.~A"
+                      (storage-bucket storage)
+                      (storage-endpoint storage)))
+        (path (format nil "~@[~A~]~A"
+                      (storage-prefix storage)
+                      file-key)))
+    (let ((aws-sign4:*aws-credentials*
+            (lambda ()
+              (values (s3-storage-access-key storage)
+                      (s3-storage-secret-key storage)))))
+      (aws-sign4:aws-sign4
+        :region (s3-storage-region storage)
+        :service "s3"
+        :host host
+        :path path
+        :params (when-let (session-token (s3-storage-session-token storage))
+                  `(("X-Amz-Security-Token" . ,session-token)))
+        :expires expires-in))))
 
 (defun s3-file-key (storage file-key)
   (format nil "~@[~A~]~A"
