@@ -7,9 +7,13 @@
                 #:*s3-endpoint*
                 #:*credentials*
                 #:region-endpoint
+                #:get-object
                 #:put-file
                 #:put-stream
                 #:delete-object)
+  (:import-from #:flexi-streams
+                #:make-flexi-stream
+                #:make-in-memory-input-stream)
   (:import-from #:alexandria
                 #:once-only)
   (:export #:s3-storage
@@ -61,9 +65,14 @@
        ,@body)))
 
 (defmethod get-object-in-storage ((storage s3-storage) file-key)
-  (with-s3-storage storage
-    (zs3:get-object (storage-bucket storage) (s3-file-key storage file-key)
-                    :output :stream)))
+  ;; XXX: ZS3 (Drakma) returns a closed stream when specifying ':output :stream' and fails to read.
+  (let ((content
+          (with-s3-storage storage
+            (zs3:get-object (storage-bucket storage) (s3-file-key storage file-key)
+                            :output :vector))))
+    (flex:make-flexi-stream
+      (flex:make-in-memory-input-stream content)
+      :external-format :utf-8)))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
   (with-s3-storage storage
