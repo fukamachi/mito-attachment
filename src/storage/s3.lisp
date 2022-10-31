@@ -50,7 +50,7 @@
           (storage-prefix storage)
           file-key))
 
-(defun s3-storage-file-presigned-url (storage file-key &key (expires-in 900))
+(defun s3-storage-file-presigned-url (storage file-key &key (method :get) (expires-in 900))
   (let ((host (format nil "~A.~A"
                       (storage-bucket storage)
                       (storage-endpoint storage)))
@@ -64,6 +64,7 @@
       (aws-sign4:aws-sign4
         :region (s3-storage-region storage)
         :service "s3"
+        :method method
         :host host
         :path path
         :params (when-let (session-token (s3-storage-session-token storage))
