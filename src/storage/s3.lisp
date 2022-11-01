@@ -20,8 +20,7 @@
   (:import-from #:alexandria
                 #:once-only)
   (:export #:s3-storage
-           #:s3-storage-credentials
-           #:s3-storage-file-presigned-url))
+           #:s3-storage-credentials))
 (in-package :mito.attachment.storage.s3)
 
 (defclass s3-storage (storage)
@@ -49,7 +48,7 @@
           (storage-prefix storage)
           file-key))
 
-(defun s3-storage-file-presigned-url (storage file-key &key (method :get) (expires-in 900))
+(defmethod storage-file-signed-url ((storage s3-storage) file-key &key (method :get) (expires-in 900))
   (let ((file-url (quri:uri (storage-file-url storage file-key))))
     (multiple-value-bind (access-key secret-key session-token)
         (s3-storage-credentials storage)
