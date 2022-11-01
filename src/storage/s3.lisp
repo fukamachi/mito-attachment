@@ -14,21 +14,17 @@
                 #:*aws-credentials*
                 #:aws-sign4)
   (:import-from #:alexandria
-                #:once-only
-                #:when-let)
+                #:once-only)
   (:export #:s3-storage
            #:s3-storage-credentials
            #:s3-storage-file-presigned-url))
 (in-package :mito.attachment.storage.s3)
 
 (defclass s3-storage (storage)
-  ((access-key :initarg :access-key
-               :accessor s3-storage-access-key)
-   (secret-key :initarg :secret-key
-               :accessor s3-storage-secret-key)
+  ((access-key :initarg :access-key)
+   (secret-key :initarg :secret-key)
    (session-token :initarg :session-token
-                  :initform nil
-                  :accessor s3-storage-session-token)
+                  :initform nil)
    (region :initarg :region
            :initform zs3:*s3-region*
            :accessor s3-storage-region))
@@ -37,10 +33,9 @@
 
 (defgeneric s3-storage-credentials (storage)
   (:method ((storage s3-storage))
-    (values
-     (s3-storage-access-key storage)
-     (s3-storage-secret-key storage)
-     (s3-storage-session-token storage))))
+    (with-slots (access-key secret-key session-token)
+        storage
+      (values access-key secret-key session-token))))
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
@@ -57,19 +52,19 @@
         (path (format nil "~@[~A~]~A"
                       (storage-prefix storage)
                       file-key)))
-    (let ((aws-sign4:*aws-credentials*
-            (lambda ()
-              (values (s3-storage-access-key storage)
-                      (s3-storage-secret-key storage)))))
-      (aws-sign4:aws-sign4
-        :region (s3-storage-region storage)
-        :service "s3"
-        :method method
-        :host host
-        :path path
-        :params (when-let (session-token (s3-storage-session-token storage))
-                  `(("X-Amz-Security-Token" . ,session-token)))
-        :expires expires-in))))
+    (multiple-value-bind (access-key secret-key session-token)
+        (s3-storage-credentials storage)
+      (let ((aws-sign4:*aws-credentials*
+              (lambda () (values access-key secret-key))))
+        (aws-sign4:aws-sign4
+          :region (s3-storage-region storage)
+          :service "s3"
+          :method method
+          :host host
+          :path path
+          :params (when session-token
+                    `(("X-Amz-Security-Token" . ,session-token)))
+          :expires expires-in)))))
 
 (defun s3-file-key (storage file-key)
   (format nil "~@[~A~]~A"
