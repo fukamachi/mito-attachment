@@ -18,10 +18,10 @@
   :license "LLGPL"
   :depends-on (:mito
                :zs3
+               :aws-sign4
                :lack-component
                :trivial-mimes
                :uuid
-               :cl-reexport
                :uiop
                :alexandria)
   :components ((:module "src"
