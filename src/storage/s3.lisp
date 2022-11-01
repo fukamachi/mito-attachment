@@ -50,12 +50,7 @@
           file-key))
 
 (defun s3-storage-file-presigned-url (storage file-key &key (method :get) (expires-in 900))
-  (let ((host (format nil "~A.~A"
-                      (storage-bucket storage)
-                      (storage-endpoint storage)))
-        (path (format nil "~@[~A~]~A"
-                      (storage-prefix storage)
-                      file-key)))
+  (let ((file-url (quri:uri (storage-file-url storage file-key))))
     (multiple-value-bind (access-key secret-key session-token)
         (s3-storage-credentials storage)
       (let ((aws-sign4:*aws-credentials*
@@ -64,8 +59,8 @@
           :region (s3-storage-region storage)
           :service "s3"
           :method method
-          :host host
-          :path path
+          :host (quri:uri-host file-url)
+          :path (quri:uri-path file-url)
           :params (when session-token
                     `(("X-Amz-Security-Token" . ,session-token)))
           :expires expires-in)))))
