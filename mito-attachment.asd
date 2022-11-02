@@ -21,6 +21,7 @@
                :aws-sign4
                :lack-component
                :trivial-mimes
+               :quri
                :uuid
                :uiop
                :alexandria)

@@ -59,6 +59,8 @@ Besides, the backend storage can be replaced easily. This makes it easy that usi
 ;=> "/mito-attachment-example/3616D80112884799B272DC962F4BBF97.jpg"
 ```
 
+Additionally, `file-signed-url` can also be used for getting a signed URL (ex. Amazon S3 Presigned URL).
+
 See [example.lisp](example.lisp) for getting the full example. It's a Lack web application which allows users to upload image files.
 
 ## Installation

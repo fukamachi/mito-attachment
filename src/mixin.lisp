@@ -5,6 +5,7 @@
                 #:storage
                 #:*storage*
                 #:storage-file-url
+                #:storage-file-signed-url
                 #:get-object-in-storage
                 #:store-object-in-storage
                 #:delete-object-from-storage)
@@ -22,6 +23,7 @@
            #:content-type
            #:file-size
            #:file-url
+           #:file-signed-url
            #:get-object
            #:content))
 (in-package :mito.attachment.mixin)
@@ -104,6 +106,13 @@
   (:method ((attachment attachment))
     (storage-file-url *storage*
                       (file-key attachment))))
+
+(defgeneric file-signed-url (attachment)
+  (:method ((attachment attachment) &rest args &key method expires-in)
+    (declare (ignore method expires-in))
+    (apply #'storage-file-signed-url *storage*
+           (file-key attachment)
+           args)))
 
 (defgeneric get-object (attachment)
   (:method ((attachment attachment))
