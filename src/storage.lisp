@@ -7,6 +7,7 @@
            #:storage-prefix
            #:storage-endpoint
            #:storage-file-url
+           #:storage-file-signed-url
            #:get-object-in-storage
            #:store-object-in-storage
            #:delete-object-from-storage))
@@ -25,6 +26,11 @@
              :accessor storage-endpoint)))
 
 (defgeneric storage-file-url (storage file-key))
+
+(defgeneric storage-file-signed-url (storage file-key &key method expires-in)
+  (:method (storage file-key &rest args)
+    (declare (ignore args))
+    (storage-file-url storage file-key)))
 
 (defgeneric get-object-in-storage (storage file-key))
 
