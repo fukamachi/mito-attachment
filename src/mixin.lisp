@@ -107,7 +107,7 @@
     (storage-file-url *storage*
                       (file-key attachment))))
 
-(defgeneric file-signed-url (attachment)
+(defgeneric file-signed-url (attachment &key method expires-in)
   (:method ((attachment attachment) &rest args &key method expires-in)
     (declare (ignore method expires-in))
     (apply #'storage-file-signed-url *storage*
