@@ -17,8 +17,8 @@
   :author "Eitaro Fukamachi"
   :license "LLGPL"
   :depends-on (:mito
-               :zs3
-               :aws-sign4
+               :aws-sdk
+               :aws-sdk/services/s3
                :lack-component
                :trivial-mimes
                :quri

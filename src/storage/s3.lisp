@@ -2,14 +2,18 @@
 (defpackage mito.attachment.storage.s3
   (:use #:cl
         #:mito.attachment.storage)
-  (:import-from #:zs3
-                #:*s3-region*
-                #:*s3-endpoint*
-                #:*credentials*
-                #:region-endpoint
+  (:import-from #:mito-attachment.util
+                #:slurp-stream)
+  (:import-from #:aws-sdk
+                #:*session*
+                #:make-session
+                #:make-credentials
+                #:session-region
+                #:session-credentials
+                #:credentials-keys)
+  (:import-from #:aws-sdk/services/s3
+                #:put-object
                 #:get-object
-                #:put-file
-                #:put-stream
                 #:delete-object)
   (:import-from #:aws-sign4
                 #:*aws-credentials*
@@ -18,27 +22,35 @@
                 #:make-flexi-stream
                 #:make-in-memory-input-stream)
   (:import-from #:alexandria
-                #:once-only)
-  (:export #:s3-storage
-           #:s3-storage-credentials))
+                #:once-only
+                #:remove-from-plist)
+  (:export #:s3-storage))
 (in-package :mito.attachment.storage.s3)
 
 (defclass s3-storage (storage)
-  ((access-key :initarg :access-key)
-   (secret-key :initarg :secret-key)
-   (session-token :initarg :session-token
-                  :initform nil)
-   (region :initarg :region
-           :initform zs3:*s3-region*
-           :accessor s3-storage-region))
-  (:default-initargs
-   :endpoint zs3:*s3-endpoint*))
+  ((session :initarg :session
+            :accessor s3-storage-session)))
 
-(defgeneric s3-storage-credentials (storage)
-  (:method ((storage s3-storage))
-    (with-slots (access-key secret-key session-token)
-        storage
-      (values access-key secret-key session-token))))
+(defmethod initialize-instance :around ((storage s3-storage) &rest initargs
+                                                             &key access-key secret-key session-token region session
+                                                                  endpoint bucket
+                                                             &allow-other-keys)
+  (check-type bucket string)
+  (check-type endpoint (or string null))
+  (let ((session (or session
+                     (aws:make-session :region region
+                                       :credentials
+                                       (when (or access-key secret-key session-token)
+                                         (aws:make-credentials
+                                           :access-key-id access-key
+                                           :secret-access-key secret-key
+                                           :session-token session-token))))))
+    (apply #'call-next-method storage
+           :session session
+           :endpoint (or endpoint
+                         (format nil "~(~A~).s3.~(~A~).amazonaws.com" bucket (aws:session-region session)))
+           (remove-from-plist initargs
+                              '(:access-key :secret-key :session-token :region :session :endpoint)))))
 
 (defmethod storage-file-url ((storage s3-storage) file-key)
   (format nil
@@ -49,13 +61,15 @@
           file-key))
 
 (defmethod storage-file-signed-url ((storage s3-storage) file-key &key (method :get) (expires-in 900))
-  (let ((file-url (quri:uri (storage-file-url storage file-key))))
+  (let* ((file-url (quri:uri (storage-file-url storage file-key)))
+         (session (s3-storage-session storage))
+         (credentials (aws:session-credentials session)))
     (multiple-value-bind (access-key secret-key session-token)
-        (s3-storage-credentials storage)
+        (aws:credentials-keys credentials)
       (let ((aws-sign4:*aws-credentials*
               (lambda () (values access-key secret-key))))
         (aws-sign4:aws-sign4
-          :region (s3-storage-region storage)
+          :region (aws:session-region session)
           :service "s3"
           :method method
           :host (quri:uri-host file-url)
@@ -71,37 +85,31 @@
 
 (defmacro with-s3-storage (storage &body body)
   (once-only (storage)
-    `(let ((zs3:*s3-region* (s3-storage-region ,storage))
-           ;; XXX: ZS3 ignores the bucket name if zs3:*s3-endpoint* is different
-           ;;   from the returned value of zs3::region-endpoint.
-           (zs3:*s3-endpoint* (zs3::region-endpoint (s3-storage-region ,storage)))
-           (zs3:*credentials* (multiple-value-list
-                                (s3-storage-credentials ,storage))))
+    `(let ((aws:*session* (s3-storage-session ,storage)))
        ,@body)))
 
 (defmethod get-object-in-storage ((storage s3-storage) file-key)
-  ;; XXX: ZS3 (Drakma) returns a closed stream when specifying ':output :stream' and fails to read.
   (let ((content
           (with-s3-storage storage
-            (zs3:get-object (storage-bucket storage) (s3-file-key storage file-key)
-                            :output :vector))))
-    (flex:make-flexi-stream
-      (flex:make-in-memory-input-stream content)
-      :external-format :utf-8)))
+            (aws/s3:get-object :bucket (storage-bucket storage)
+                               :key (s3-file-key storage file-key)))))
+    (flex:make-flexi-stream content)))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
-  (with-s3-storage storage
-    (zs3:put-file object (storage-bucket storage) (s3-file-key storage file-key))))
+  (with-open-file (in object :element-type '(unsigned-byte 8))
+    (store-object-in-storage storage (slurp-stream in) file-key)))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object stream) file-key)
-  (with-s3-storage storage
-    (zs3:put-stream object (storage-bucket storage) (s3-file-key storage file-key))))
+  (store-object-in-storage storage (slurp-stream object) file-key))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object sequence) file-key)
   (check-type object (array (unsigned-byte 8)))
   (with-s3-storage storage
-    (zs3:put-vector object (storage-bucket storage) (s3-file-key storage file-key))))
+    (aws/s3:put-object :bucket (storage-bucket storage)
+                       :key (s3-file-key storage file-key)
+                       :body object)))
 
 (defmethod delete-object-from-storage ((storage s3-storage) file-key)
   (with-s3-storage storage
-    (zs3:delete-object (storage-bucket storage) (s3-file-key storage file-key))))
+    (aws/s3:delete-object :bucket (storage-bucket storage)
+                          :key (s3-file-key storage file-key))))
