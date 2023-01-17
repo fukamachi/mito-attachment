@@ -48,7 +48,7 @@
     (apply #'call-next-method storage
            :session session
            :endpoint (or endpoint
-                         (format nil "~(~A~).s3.~(~A~).amazonaws.com" bucket (aws:session-region session)))
+                         (format nil "s3.~(~A~).amazonaws.com" (aws:session-region session)))
            (remove-from-plist initargs
                               '(:access-key :secret-key :session-token :region :session :endpoint)))))
 
