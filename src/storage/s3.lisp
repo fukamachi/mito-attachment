@@ -10,6 +10,7 @@
                 #:make-credentials
                 #:session-region
                 #:session-credentials
+                #:default-aws-credentials
                 #:credentials-keys)
   (:import-from #:aws-sdk/services/s3
                 #:put-object
@@ -63,7 +64,8 @@
 (defmethod storage-file-signed-url ((storage s3-storage) file-key &key (method :get) (expires-in 900))
   (let* ((file-url (quri:uri (storage-file-url storage file-key)))
          (session (s3-storage-session storage))
-         (credentials (aws:session-credentials session)))
+         (credentials (or (aws:session-credentials session)
+                          (aws:default-aws-credentials))))
     (multiple-value-bind (access-key secret-key session-token)
         (aws:credentials-keys credentials)
       (let ((aws-sign4:*aws-credentials*
