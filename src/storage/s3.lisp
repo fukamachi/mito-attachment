@@ -100,7 +100,38 @@
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
   (with-open-file (in object :element-type '(unsigned-byte 8))
-    (store-object-in-storage storage (slurp-stream in) file-key)))
+    (if (<= (* 100 (expt 1024 2)) (file-length in))
+        (with-s3-storage storage
+          (let* ((multipart-upload
+                   (aws/s3:create-multipart-upload
+                    :bucket (storage-bucket storage)
+                    :key (s3-file-key storage file-key)))
+                 (upload-id (second (assoc "UploadId" multipart-upload :test 'equal))))
+            (loop with buf = (make-array (* 5 (expt 1024 2)) :element-type '(unsigned-byte 8))
+                  for part-number from 1
+                  for read-bytes = (read-sequence buf in)
+                  until (zerop read-bytes)
+                  collect
+                  (let ((headers
+                          (nth-value 2
+                                     (aws/s3:upload-part
+                                      :bucket (storage-bucket storage)
+                                      :key (s3-file-key storage file-key)
+                                      :upload-id upload-id
+                                      :part-number part-number
+                                      :body (if (= read-bytes (length buf))
+                                                buf
+                                                (subseq buf 0 read-bytes))))))
+                    (aws/s3:make-completed-part :part-number part-number
+                                                :etag (gethash "etag" headers)))
+                    into parts
+                  finally
+                     (aws/s3:complete-multipart-upload
+                      :bucket (storage-bucket storage)
+                      :key (s3-file-key storage file-key)
+                      :upload-id upload-id
+                      :multipart-upload (aws/s3:make-completed-multipart-upload :parts parts)))))
+        (store-object-in-storage storage in file-key))))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object stream) file-key)
   (store-object-in-storage storage (slurp-stream object) file-key))
