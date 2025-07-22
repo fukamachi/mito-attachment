@@ -19,9 +19,6 @@
   (:import-from #:aws-sign4
                 #:*aws-credentials*
                 #:aws-sign4)
-  (:import-from #:flexi-streams
-                #:make-flexi-stream
-                #:make-in-memory-input-stream)
   (:import-from #:alexandria
                 #:once-only
                 #:remove-from-plist)
@@ -91,12 +88,9 @@
        ,@body)))
 
 (defmethod get-object-in-storage ((storage s3-storage) file-key)
-  (let ((content
-          (with-s3-storage storage
-            (aws/s3:get-object :bucket (storage-bucket storage)
-                               :key (s3-file-key storage file-key)))))
-    (flex:make-flexi-stream content
-                            :external-format :utf-8)))
+  (with-s3-storage storage
+    (aws/s3:get-object :bucket (storage-bucket storage)
+                       :key (s3-file-key storage file-key))))
 
 (defmethod store-object-in-storage ((storage s3-storage) (object pathname) file-key)
   (with-open-file (in object :element-type '(unsigned-byte 8))
