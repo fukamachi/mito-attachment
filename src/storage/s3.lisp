@@ -4,6 +4,8 @@
         #:mito.attachment.storage)
   (:import-from #:mito-attachment.util
                 #:slurp-stream)
+  (:import-from #:split-sequence
+                #:split-sequence)
   (:import-from #:aws-sdk
                 #:*session*
                 #:make-session
@@ -78,9 +80,12 @@
           :expires expires-in)))))
 
 (defun s3-file-key (storage file-key)
-  (format nil "~@[~A~]~A"
-          (storage-prefix storage)
-          file-key))
+  (format nil "~{~A~^/~}"
+          (mapcar #'quri:url-encode
+                  (split-sequence #\/
+                                  (format nil "~@[~A~]~A"
+                                          (storage-prefix storage)
+                                          file-key)))))
 
 (defmacro with-s3-storage (storage &body body)
   (once-only (storage)

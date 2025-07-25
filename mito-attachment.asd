@@ -24,6 +24,7 @@
                :quri
                :uuid
                :uiop
+               :split-sequence
                :alexandria)
   :components ((:module "src"
                 :components
