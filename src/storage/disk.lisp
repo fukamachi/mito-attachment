@@ -54,7 +54,8 @@
   (with-open-file (in (disk-storage-file storage file-key) :element-type '(unsigned-byte 8))
     (flex:make-flexi-stream
       (flex:make-in-memory-input-stream
-        (slurp-stream in)))))
+        (slurp-stream in))
+      :external-format :utf-8)))
 
 (defmethod store-object-in-storage ((storage disk-storage) (object pathname) file-key)
   (let ((file (disk-storage-file storage file-key)))
